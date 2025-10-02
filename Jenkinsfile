@@ -26,14 +26,14 @@ pipeline {
         // Étape 2 : Installer les dépendances du backend
         stage('Install Backend Dependencies') {
             steps {
-                sh 'cd backend && npm install'
+                sh 'cd back && npm install'
             }
         }
 
         // Étape 3 : Installer et builder le frontend
         stage('Install & Build Frontend') {
             steps {
-                sh 'cd frontend && npm install && npm run build'
+                sh 'cd front && npm install && npm run build'
             }
         }
 
