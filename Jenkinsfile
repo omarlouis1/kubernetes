@@ -10,6 +10,7 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials') // ID Jenkins pour DockerHub
         IMAGE_NAME = "seynabou26/full_stack_app"                     // Nom de l'image Docker
+	PATH = "/usr/bin:/usr/local/bin:${env.PATH}"
     }
 
     // Définition des différentes étapes du pipeline
