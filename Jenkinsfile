@@ -82,11 +82,12 @@ pipeline {
 
         // Si le build échoue
         failure {
-            emailext (
-                subject: "❌ Build FAILED: ${JOB_NAME} #${BUILD_NUMBER}",
-                body: "Le pipeline ${JOB_NAME} a échoué.\nURL du build: ${BUILD_URL}\nDernières lignes des logs:\n${BUILD_LOG, maxLines=50}",
-                to: 'seynaboubadji26@gmail.com'
-            )
-        }
+	    emailext (
+        subject: "❌ Build FAILED: ${JOB_NAME} #${BUILD_NUMBER}",
+        body: "Le pipeline ${JOB_NAME} a échoué.\nURL du build: ${BUILD_URL}",
+        to: 'seynaboubadji26@gmail.com'
+    )
+}
+
     }
 }
