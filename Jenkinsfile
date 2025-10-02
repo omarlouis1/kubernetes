@@ -1,94 +1,76 @@
-// Jenkinsfile pour un projet Node.js + Docker
-// Ce pipeline clone le projet, installe les dépendances, build une image Docker,
-// pousse l'image sur DockerHub, déploie un conteneur et envoie des notifications par email.
-
 pipeline {
-    // Exécution sur n'importe quel agent disponible
-    agent any
-
-    // Variables d'environnement globales
-    environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials') // ID Jenkins pour DockerHub
-        IMAGE_NAME = "seynabou26/full_stack_app"                     // Nom de l'image Docker
-	PATH = "/usr/bin:/usr/local/bin:${env.PATH}"
+    agent {
+        docker { image 'node:20-alpine' } // Agent Docker avec Node.js préinstallé
     }
 
-    // Définition des différentes étapes du pipeline
+    environment {
+        // Met ici les credentials DockerHub si besoin
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-id')
+        PATH = "/usr/local/bin:/usr/bin:${env.PATH}"
+    }
+
     stages {
 
-        // Étape 1 : Cloner le code depuis GitHub
         stage('Checkout') {
             steps {
-                // GitHub public, pas besoin de credentials
-                git branch: 'main', url: 'https://github.com/Seynabou26/full_stack_app.git'
+                checkout scm
             }
         }
 
-        // Étape 2 : Installer les dépendances du backend
         stage('Install Backend Dependencies') {
             steps {
-                sh 'cd back && npm install'
+                dir('back') {
+                    sh 'npm install'
+                }
             }
         }
 
-        // Étape 3 : Installer et builder le frontend
         stage('Install & Build Frontend') {
             steps {
-                sh 'cd front && npm install && npm run build'
+                dir('front') {
+                    sh 'npm install'
+                    sh 'npm run build'
+                }
             }
         }
 
-        // Étape 4 : Builder l'image Docker
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Crée l'image Docker à partir du Dockerfile à la racine
-                    docker.build("${IMAGE_NAME}:latest")
+                    sh 'docker build -t seynabou26/full_stack_app:latest .'
                 }
             }
         }
 
-        // Étape 5 : Push de l'image sur DockerHub
         stage('Push Docker Image') {
             steps {
                 script {
-                    // Connexion à DockerHub via les credentials Jenkins
-                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
-                        docker.image("${IMAGE_NAME}:latest").push()
-                    }
+                    sh 'docker login -u $DOCKERHUB_CREDENTIALS_USR -p $DOCKERHUB_CREDENTIALS_PSW'
+                    sh 'docker push seynabou26/full_stack_app:latest'
                 }
             }
         }
 
-        // Étape 6 : Déploiement du conteneur
         stage('Deploy Container') {
             steps {
-                // Exécute le conteneur avec port mapping
-                sh 'docker run -d -p 3000:3000 --name full_stack_app ${IMAGE_NAME}:latest'
+                script {
+                    // Stop et supprime le conteneur existant si besoin
+                    sh 'docker rm -f full_stack_app || true'
+                    // Lancer le conteneur
+                    sh 'docker run -d -p 8080:8080 -p 5000:5000 --name full_stack_app seynabou26/full_stack_app:latest'
+                }
             }
         }
     }
 
-    // Post-actions exécutées après la fin du pipeline
-    post {
-
-        // Si le build réussit
-        success {
-            emailext (
-                subject: "✅ Build SUCCESS: ${JOB_NAME} #${BUILD_NUMBER}",
-                body: "Le pipeline ${JOB_NAME} s'est terminé avec succès.\nURL du build: ${BUILD_URL}",
+    /*post {
+        failure {
+            emailext(
+                subject: "❌ Build FAILED: ${JOB_NAME} #${BUILD_NUMBER}",
+                body: """Le pipeline ${JOB_NAME} a échoué.
+URL du build: ${BUILD_URL}""",
                 to: 'seynaboubadji26@gmail.com'
             )
         }
-
-        // Si le build échoue
-        failure {
-	    emailext (
-        subject: "❌ Build FAILED: ${JOB_NAME} #${BUILD_NUMBER}",
-        body: "Le pipeline ${JOB_NAME} a échoué.\nURL du build: ${BUILD_URL}",
-        to: 'seynaboubadji26@gmail.com'
-    )
-}
-
-    }
+    }*/
 }
