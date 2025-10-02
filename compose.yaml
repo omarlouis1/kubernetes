@@ -1,0 +1,45 @@
+version: "3.9"
+
+services:
+  frontend:
+    build: ./front
+    container_name: react-frontend
+    ports:
+      - "5173:5173"  # Port différent du backend
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000  # Ou http://backend:3000 selon la config
+    networks:
+      - backend-net
+
+  backend:
+    build: ./back
+    container_name: express-api
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://mongo:27017/smartphoneDB
+    depends_on:
+      - mongo
+    networks:
+      - backend-net
+
+  mongo:
+    image: mongo:6.0
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - backend-net
+
+volumes:
+  mongo_data:
+
+networks:
+  backend-net:
+    driver: bridge
