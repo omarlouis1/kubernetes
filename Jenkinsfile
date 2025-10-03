@@ -6,14 +6,14 @@ pipeline {
         nodejs "NodeJS_22"
     }
 
-    // Variables d’environnement
+     Variables d’environnement
     environment {
         DOCKER_HUB_USER = 'seynabou02'
         FRONT_IMAGE = 'react-frontend'
         BACKEND_IMAGE = 'express-backend'
     }
 
-    /* Déclencheur webhook GitHub
+    //Déclencheur webhook GitHub
     triggers {
         GenericTrigger(
             genericVariables: [
@@ -26,7 +26,7 @@ pipeline {
             printContributedVariables: true,
             printPostContent: true
         )
-    } */
+    } 
 
     // Étapes principales
     stages {
