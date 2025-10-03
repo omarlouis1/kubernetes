@@ -6,7 +6,7 @@ pipeline {
         nodejs "NodeJS_22"
     }
 
-     Variables d’environnement
+     // Variables d’environnement
     environment {
         DOCKER_HUB_USER = 'seynabou02'
         FRONT_IMAGE = 'react-frontend'
