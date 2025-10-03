@@ -3,7 +3,7 @@ pipeline{
 
 //Déclaration des outils
     tools {
-        nodejs "NodeJS_22"
+        nodejs "NodeJS_12"
     }
 
 //Variables d’environnement
@@ -23,7 +23,7 @@ pipeline{
                 [key: 'commit_message', value: '$.head_commit.message']
             ],
             causeString: 'Push par $pusher_name sur $ref: "$commit_message"',
-            token: 'mysecret',
+            token: 'mywebhook',
             printContributedVariables: true,
             printPostContent: true
         )
