@@ -13,7 +13,7 @@ pipeline {
         BACKEND_IMAGE = 'express-backend'
     }
 
-    // Déclencheur webhook GitHub
+    /* Déclencheur webhook GitHub
     triggers {
         GenericTrigger(
             genericVariables: [
@@ -26,7 +26,7 @@ pipeline {
             printContributedVariables: true,
             printPostContent: true
         )
-    }
+    } */
 
     // Étapes principales
     stages {
