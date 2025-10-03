@@ -33,7 +33,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/Seynabou26/full_stack_app.git'
+               // git branch: 'main', url: 'https://github.com/Seynabou26/full_stack_app.git'
             }
         }
 
