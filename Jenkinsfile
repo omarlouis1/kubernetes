@@ -120,6 +120,7 @@ pipeline {
                 '''
             }
         }
+    }
             post {
         success {
             emailext(
@@ -136,5 +137,5 @@ pipeline {
             )
         }
     }
-    }
+    
 }
