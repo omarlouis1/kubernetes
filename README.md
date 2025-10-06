@@ -1,2 +1,1 @@
-Full stacl APP
-test modification
+Full stack APP
