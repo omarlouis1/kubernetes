@@ -1,1 +1,1 @@
-Full stack app
+Full stacl APP
