@@ -6,14 +6,14 @@ pipeline {
         nodejs "NodeJS_22"
     }
 
-     // Variables d’environnement
+    // Variables d’environnement
     environment {
         DOCKER_HUB_USER = 'seynabou02'
         FRONT_IMAGE = 'react-frontend'
         BACKEND_IMAGE = 'express-backend'
     }
 
-    //Déclencheur webhook GitHub
+    // Déclencheur webhook GitHub
     triggers {
         GenericTrigger(
             genericVariables: [
@@ -28,7 +28,6 @@ pipeline {
         )
     } 
 
-    // Étapes principales
     stages {
 
         stage('Checkout') {
@@ -52,6 +51,54 @@ pipeline {
                 }
             }
         }
+
+        // ----------------------------
+        // Début de l'intégration SonarQube
+        // ----------------------------
+        stage('SonarQube Analysis - Backend') {
+            steps {
+                withSonarQubeEnv('SONARQUBE') { // 'SONARQUBE' = nom du serveur configuré dans Jenkins
+                    dir('back') {
+                        sh '''
+                            sonar-scanner \
+                            -Dsonar.projectKey=backend_fullstack \
+                            -Dsonar.sources=. \
+                            -Dsonar.language=js \
+                            -Dsonar.host.url=$SONAR_HOST_URL \
+                            -Dsonar.login=$SONAR_AUTH_TOKEN
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('SonarQube Analysis - Frontend') {
+            steps {
+                withSonarQubeEnv('SONARQUBE') {
+                    dir('front') {
+                        sh '''
+                            sonar-scanner \
+                            -Dsonar.projectKey=frontend_fullstack \
+                            -Dsonar.sources=. \
+                            -Dsonar.language=js \
+                            -Dsonar.host.url=$SONAR_HOST_URL \
+                            -Dsonar.login=$SONAR_AUTH_TOKEN
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage("Quality Gate") {
+            steps {
+                timeout(time: 2, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+        // ----------------------------
+        // Fin de l'intégration SonarQube
+        // ----------------------------
 
         stage('Run tests') {
             steps {
@@ -121,7 +168,8 @@ pipeline {
             }
         }
     }
-            post {
+
+    post {
         success {
             emailext(
                 subject: "Build SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
@@ -137,5 +185,4 @@ pipeline {
             )
         }
     }
-    
 }
