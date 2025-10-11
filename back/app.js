@@ -3,6 +3,7 @@ const cors = require('cors');   //
 const dotenv = require('dotenv');
 const connectDB = require('./connectdb');
 const smartphoneRoutes = require('./routes/smartphoneRoutes');
+const test= "";
 
 dotenv.config();
 
@@ -25,3 +26,4 @@ app.use('/api', smartphoneRoutes);
 // Lancer le serveur
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Serveur lancé sur http://localhost:${PORT}`));
+
