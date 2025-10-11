@@ -55,22 +55,25 @@ pipeline {
         // ----------------------------
         // Début de l'intégration SonarQube
         // ----------------------------
-       stage('SonarQube Analysis') {
+    stage('SonarQube Analysis') {
     steps {
         echo "Analyse du code avec SonarQube"
-        withSonarQubeEnv('Sonarqube_local') {
-            withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_TOKEN')]) {
-                sh """
-                    sonar-scanner \
-                    -Dsonar.projectKey=sonarqube \
-                    -Dsonar.sources=. \
-                    -Dsonar.host.url=$SONAR_HOST_URL \
-                    -Dsonar.login=$SONAR_TOKEN
-                """
+        withSonarQubeEnv('SonarQube_local') {
+            withCredentials([string(credentialsId: 'sonatqube', variable: 'SONAR_TOKEN')]) {
+                withEnv(["SONAR_TOKEN=$SONAR_TOKEN"]) {
+                    sh '''
+                        sonar-scanner \
+                        -Dsonar.projectKey=sonarqube \
+                        -Dsonar.sources=. \
+                        -Dsonar.host.url=http://localhost:9000/ \
+                        -Dsonar.login=$SONAR_TOKEN
+                    '''
+                }
             }
         }
     }
 }
+
 
         stage("Quality Gate") {
             steps {
