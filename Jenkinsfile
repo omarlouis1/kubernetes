@@ -75,7 +75,8 @@ pipeline {
                 // Timeout augmenté pour projets moyens/gros
                 timeout(time: 5, unit: 'MINUTES') {
                     // Ne bloque pas le pipeline si problème temporaire
-                    waitForQualityGate()
+                    waitForQualityGate(abortPipeline: false)
+                    
                 }
             }
         }
