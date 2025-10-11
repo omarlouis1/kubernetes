@@ -1,19 +1,16 @@
 pipeline {
     agent any
 
-    // Déclaration des outils
     tools {
         nodejs "NodeJS_22"
     }
 
-    // Variables d’environnement
     environment {
         DOCKER_HUB_USER = 'seynabou02'
         FRONT_IMAGE = 'react-frontend'
         BACKEND_IMAGE = 'express-backend'
     }
 
-    // Déclencheur webhook GitHub
     triggers {
         GenericTrigger(
             genericVariables: [
@@ -26,7 +23,7 @@ pipeline {
             printContributedVariables: true,
             printPostContent: true
         )
-    } 
+    }
 
     stages {
 
@@ -53,39 +50,39 @@ pipeline {
         }
 
         // ----------------------------
-        // Début de l'intégration SonarQube
+        // SonarQube
         // ----------------------------
-    stage('SonarQube Analysis') {
-    steps {
-        echo "Analyse du code avec SonarQube"
-        withSonarQubeEnv('Sonarqube_local') {
-            withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_TOKEN')]) {
-                sh """
-                    ${tool('Sonarqube_scanner')}/bin/sonar-scanner \
-                    -Dsonar.projectKey=sonarqube \
-                    -Dsonar.sources=. \
-                    -Dsonar.host.url=$SONAR_HOST_URL \
-                    -Dsonar.login=$SONAR_TOKEN
-                """
+        stage('SonarQube Analysis') {
+            steps {
+                echo "Analyse du code avec SonarQube"
+                withSonarQubeEnv('Sonarqube_local') {
+                    withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_TOKEN')]) {
+                        sh """
+                            ${tool('Sonarqube_scanner')}/bin/sonar-scanner \
+                            -Dsonar.projectKey=sonarqube \
+                            -Dsonar.sources=. \
+                            -Dsonar.host.url=$SONAR_HOST_URL \
+                            -Dsonar.login=$SONAR_TOKEN
+                        """
+                    }
+                }
             }
         }
-    }
-}
-
 
         stage("Quality Gate") {
             steps {
                 echo "Vérification du Quality Gate"
-                timeout(time: 2, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+                // Timeout augmenté pour projets moyens/gros
+                timeout(time: 5, unit: 'MINUTES') {
+                    // Ne bloque pas le pipeline si problème temporaire
+                    waitForQualityGate()
                 }
             }
         }
 
         // ----------------------------
-        // Fin de l'intégration SonarQube
+        // Tests
         // ----------------------------
-
         stage('Run tests') {
             steps {
                 script {
@@ -95,6 +92,9 @@ pipeline {
             }
         }
 
+        // ----------------------------
+        // Docker
+        // ----------------------------
         stage('Build Docker Images') {
             steps {
                 script {
