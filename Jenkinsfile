@@ -59,7 +59,7 @@ pipeline {
     steps {
         echo "Analyse du code avec SonarQube"
         withSonarQubeEnv('Sonarqube_local') {
-            withCredentials([string(credentialsId: 'sonatqube', variable: 'SONAR_TOKEN')]) {
+            withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_TOKEN')]) {
                 sh """
                     sonar-scanner \
                     -Dsonar.projectKey=sonarqube \
