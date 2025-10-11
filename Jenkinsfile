@@ -55,47 +55,32 @@ pipeline {
         // ----------------------------
         // Début de l'intégration SonarQube
         // ----------------------------
-        stage('SonarQube Analysis - Backend') {
-            steps {
-                withSonarQubeEnv('SONARQUBE') { // 'SONARQUBE' = nom du serveur configuré dans Jenkins
-                    dir('back') {
-                        sh '''
-                            sonar-scanner \
-                            -Dsonar.projectKey=backend_fullstack \
-                            -Dsonar.sources=. \
-                            -Dsonar.language=js \
-                            -Dsonar.host.url=$SONAR_HOST_URL \
-                            -Dsonar.login=$SONAR_AUTH_TOKEN
-                        '''
-                    }
-                }
+       stage('SonarQube Analysis') {
+    steps {
+        echo "Analyse du code avec SonarQube"
+        withSonarQubeEnv('SonarQube_Local') {
+            withCredentials([string(credentialsId: 'sonatqube', variable: 'SONAR_TOKEN')]) {
+                sh """
+                    sonar-scanner \
+                    -Dsonar.projectKey=sonarqube \
+                    -Dsonar.sources=. \
+                    -Dsonar.host.url=$SONAR_HOST_URL \
+                    -Dsonar.login=$SONAR_TOKEN
+                """
             }
         }
-
-        stage('SonarQube Analysis - Frontend') {
-            steps {
-                withSonarQubeEnv('SONARQUBE') {
-                    dir('front') {
-                        sh '''
-                            sonar-scanner \
-                            -Dsonar.projectKey=frontend_fullstack \
-                            -Dsonar.sources=. \
-                            -Dsonar.language=js \
-                            -Dsonar.host.url=$SONAR_HOST_URL \
-                            -Dsonar.login=$SONAR_AUTH_TOKEN
-                        '''
-                    }
-                }
-            }
-        }
+    }
+}
 
         stage("Quality Gate") {
             steps {
+                echo "Vérification du Quality Gate"
                 timeout(time: 2, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
             }
         }
+
         // ----------------------------
         // Fin de l'intégration SonarQube
         // ----------------------------
