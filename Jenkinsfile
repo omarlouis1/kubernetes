@@ -52,31 +52,26 @@ pipeline {
         // ----------------------------
         // SonarQube
         // ----------------------------
-        stage('SonarQube Analysis') {
-            steps {
-                echo "Analyse du code avec SonarQube"
-                withSonarQubeEnv('Sonarqube_local') {
-                    withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_TOKEN')]) {
-                        sh """
-                            ${tool('Sonarqube_scanner')}/bin/sonar-scanner \
-                            -Dsonar.projectKey=sonarqube \
-                            -Dsonar.sources=. \
-                            -Dsonar.host.url=$SONAR_HOST_URL \
-                            -Dsonar.login=$SONAR_TOKEN
-                        """
-                    }
-                }
-            }
+       stage('SonarQube Analysis') {
+    steps {
+        echo "Analyse du code avec SonarQube"
+        withSonarQubeEnv('Sonarqube_local') {
+            sh """
+                ${tool('Sonarqube_scanner')}/bin/sonar-scanner \
+                -Dsonar.projectKey=my_unique_project_key \
+                -Dsonar.sources=. \
+                -Dsonar.host.url=$SONAR_HOST_URL \
+                -Dsonar.login=$SONAR_AUTH_TOKEN
+            """
         }
+    }
+}
 
         stage("Quality Gate") {
             steps {
                 echo "Vérification du Quality Gate"
-                // Timeout augmenté pour projets moyens/gros
-                timeout(time: 5, unit: 'MINUTES') {
-                    // Ne bloque pas le pipeline si problème temporaire
-                    waitForQualityGate(abortPipeline: false)
-                    
+                timeout(time: 10, unit: 'MINUTES') {
+                    waitForQualityGate(abortPipeline: true)
                 }
             }
         }
