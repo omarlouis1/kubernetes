@@ -52,6 +52,7 @@ pipeline {
         // ----------------------------
         // SonarQube
         // ----------------------------
+        //// Analyse le code avec SonarQube
          stage('SonarQube Analysis') {
             steps {
                 echo "Analyse du code avec SonarQube"
@@ -68,13 +69,13 @@ pipeline {
                 }
             }
         }
-
+        //Vérifie si le code passe le Quality Gate et arrête le pipeline si échoué
         stage("Quality Gate") {
             steps {
                 echo "Vérification du Quality Gate"
-                // Timeout augmenté pour projets moyens/gros
+                // Timeout fixé à 10 minutes pour attendre la réponse de SonarQube
                 timeout(time: 10, unit: 'MINUTES') {
-                    // Ne bloque pas le pipeline si problème temporaire
+                    // si le Quality Gate échoue, le pipeline est stoppé
                     waitForQualityGate(abortPipeline: true)
                 }
             }
