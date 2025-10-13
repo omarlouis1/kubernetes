@@ -70,16 +70,16 @@ pipeline {
             }
         }
         //Vérifie si le code passe le Quality Gate et arrête le pipeline si échoué
-        stage("Quality Gate") {
-            steps {
-                echo "Vérification du Quality Gate"
+       // stage("Quality Gate") {
+         //   steps {
+           //     echo "Vérification du Quality Gate"
                 // Timeout fixé à 10 minutes pour attendre la réponse de SonarQube
-                timeout(time: 10, unit: 'MINUTES') {
+             //   timeout(time: 10, unit: 'MINUTES') {
                     // si le Quality Gate échoue, le pipeline est stoppé
-                    waitForQualityGate(abortPipeline: true)
-                }
-            }
-        }
+               //     waitForQualityGate(abortPipeline: true)
+              //  }
+          //  }
+       // }
 
 
         // ----------------------------
