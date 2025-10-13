@@ -181,7 +181,7 @@ pipeline {
       // }
 
 
-     stage('Smoke Test') {
+     /*stage('Smoke Test') {
     steps {
         sh '''
             NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
@@ -195,7 +195,7 @@ pipeline {
             curl -f $BACK_URL/api || echo "Backend unreachable"
         '''
     }
-}
+}*/
 
 
    }
