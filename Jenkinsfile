@@ -181,17 +181,22 @@ pipeline {
       // }
 
 
-      stage('Smoke Test') {
+     stage('Smoke Test') {
     steps {
         sh '''
-            FRONT_URL=$(minikube service frontend-service --url)
-            BACK_URL=$(minikube service backend-service --url)
-            
+            NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+            FRONT_PORT=$(kubectl get service frontend-service -o jsonpath='{.spec.ports[0].nodePort}')
+            BACK_PORT=$(kubectl get service backend-service -o jsonpath='{.spec.ports[0].nodePort}')
+
+            FRONT_URL=http://$NODE_IP:$FRONT_PORT
+            BACK_URL=http://$NODE_IP:$BACK_PORT
+
             curl -f $FRONT_URL || echo "Frontend unreachable"
             curl -f $BACK_URL/api || echo "Backend unreachable"
         '''
     }
 }
+
 
    }
 
