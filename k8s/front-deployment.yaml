@@ -1,24 +1,23 @@
-apiVersion: apps/v1            # Version de l'API Kubernetes utilisée pour les Deployments
-kind: Deployment               # Type de ressource : Deployment pour gérer les pods
+# k8s/front-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: frontend               # Nom du Deployment
+  name: frontend
 spec:
-  replicas: 1                  # Nombre de pods à lancer pour le frontend
+  replicas: 1
   selector:
     matchLabels:
-      app: frontend            # Permet au Deployment de gérer les pods avec ce label
+      app: frontend
   template:
     metadata:
       labels:
-        app: frontend          # Label appliqué aux pods créés par ce Deployment
+        app: frontend
     spec:
       containers:
-      - name: frontend         # Nom du conteneur
-        image: seynabou02/react-frontend:latest   # Image Docker à utiliser
+      - name: frontend
+        image: seynabou02/react-frontend:latest
         ports:
-        - containerPort: 5173  # Port exposé par le conteneur à l'intérieur du pod
-
-        # ✅ Variable d'environnement pour dire au frontend où trouver l'API backend
+        - containerPort: 5173
         env:
-          - name: REACT_APP_API_URL
-            value: "http://192.168.49.2:31001"
+        - name: REACT_APP_API_URL
+          value: "http://backend-service:5000/api"

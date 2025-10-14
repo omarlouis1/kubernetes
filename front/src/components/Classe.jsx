@@ -5,9 +5,9 @@ import DetaillerSmartphone from "./DetaillerSmartphone.jsx";
 import EditerSmartphone from "./EditerSmartphone.jsx";
 
 // -------------------------------
-// Ancienne valeur localhost, à remplacer par la variable d'env Vite
-// const API_BASE = "http://localhost:5000/api/smartphones";
-const API_BASE = import.meta.env.VITE_API_URL; // <-- Nouvelle valeur, pointe vers Ingress
+// CORRECTION : Utilisez la variable correctement
+//const API_BASE = "http://localhost:5000/api/smartphones";
+const API_BASE = `${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/smartphones`;
 // -------------------------------
 
 function Classe() {
@@ -20,11 +20,16 @@ function Classe() {
   // Fonction pour charger les smartphones depuis le backend
   const getSmartphones = async () => {
     try {
+      console.log("Tentative de connexion à:", API_BASE); // Pour debug
       const res = await fetch(API_BASE);
+      if (!res.ok) {
+        throw new Error(`Erreur HTTP: ${res.status}`);
+      }
       const data = await res.json();
       setSmartphones(data);
     } catch (err) {
       console.error("Erreur fetch:", err);
+      alert(`Erreur de connexion: ${err.message}`);
     }
   };
 
@@ -36,15 +41,21 @@ function Classe() {
   // Ajouter smartphone
   const ajouterSmartphone = async (phone) => {
     try {
-      await fetch(API_BASE, {
+      const response = await fetch(API_BASE, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(phone),
       });
+      
+      if (!response.ok) {
+        throw new Error(`Erreur: ${response.status}`);
+      }
+      
       await getSmartphones(); // recharge depuis la base
       setSection("list");
     } catch (err) {
       console.error(err);
+      alert("Erreur lors de l'ajout");
     }
   };
 
@@ -70,18 +81,23 @@ function Classe() {
       await getSmartphones(); // recharge depuis la base
     } catch (err) {
       console.error(err);
+      alert("Erreur lors de la suppression");
     }
   };
 
   // Voir détail
   const voirDetail = async (phone) => {
     try {
-      const res = await fetch(`${API_BASE}/${phone.id}`);
+      const res = await fetch(`${API_BASE}/${phone._id || phone.id}`);
+      if (!res.ok) {
+        throw new Error(`Erreur: ${res.status}`);
+      }
       const data = await res.json();
       setSelectedPhone(data);
       setSection("detail");
     } catch (err) {
       console.error(err);
+      alert("Erreur lors du chargement des détails");
     }
   };
 
@@ -94,16 +110,23 @@ function Classe() {
   // Sauvegarder édition
   const sauvegarderEdition = async (updatedPhone) => {
     try {
-      await fetch(`${API_BASE}/${updatedPhone.id}`, {
+      const id = updatedPhone._id || updatedPhone.id;
+      const response = await fetch(`${API_BASE}/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedPhone),
       });
+      
+      if (!response.ok) {
+        throw new Error(`Erreur: ${response.status}`);
+      }
+      
       await getSmartphones(); // recharge depuis la base
       setSection("list");
       setEditingPhone(null);
     } catch (err) {
       console.error(err);
+      alert("Erreur lors de la modification");
     }
   };
 

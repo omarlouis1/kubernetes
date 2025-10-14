@@ -1,13 +1,13 @@
+# k8s/back-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: backend-service   # Nom du service
+  name: backend-service
 spec:
-  type: ClusterIP          # Ingress fera le routage
   selector:
-    app: backend          # Lie le service aux pods avec le label app=backend
+    app: backend
   ports:
-    - protocol: TCP
-      port: 5000          # Port interne du service
-      targetPort: 5000    # Port du conteneur backend
-     # nodePort: 31001      Port exposé sur le nœud (à accéder depuis l’extérieur)
+  - port: 5000
+    targetPort: 5000
+    nodePort: 30001
+  type: NodePort

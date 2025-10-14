@@ -1,13 +1,13 @@
+# k8s/front-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
-  name: frontend-service   # Nom du service
+  name: frontend-service
 spec:
-  type: ClusterIP           # Ingress fera le routage
   selector:
-    app: frontend          # Lie le service aux pods avec le label app=frontend
+    app: frontend
   ports:
-    - protocol: TCP
-      port: 5173           # Port interne du service
-      targetPort: 5173     # Port du conteneur frontend
-#      nodePort: 31000       Port exposé sur le nœud (à accéder depuis l’extérieur)
+  - port: 5173
+    targetPort: 5173
+    nodePort: 30002
+  type: NodePort

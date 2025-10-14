@@ -1,22 +1,25 @@
+# k8s/back-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: backend  # Nom du déploiement
+  name: backend
 spec:
-  replicas: 1  # Nombre de pods pour le backend
+  replicas: 1
   selector:
     matchLabels:
-      app: backend  # Sélecteur pour faire correspondre les pods
+      app: backend
   template:
     metadata:
       labels:
-        app: backend  # Labels pour identifier les pods
+        app: backend
     spec:
       containers:
-      - name: backend  # Nom du conteneur
-        image: seynabou02/express-backend:latest  # Image Docker du backend
+      - name: backend
+        image: seynabou02/express-backend:latest
         ports:
-        - containerPort: 5000  # Port exposé par le conteneur
-        env:  # Variables d'environnement
-         - name: MONGO_URI
-           value: mongodb://mongo-service:27017/smartphoneDB  # Connexion à MongoDB via le service
+        - containerPort: 5000
+        env:
+        - name: MONGODB_URI
+          value: "mongodb://mongo-service:27017/smartphoneDB"
+        - name: PORT
+          value: "5000"
