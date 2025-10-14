@@ -4,8 +4,11 @@ import AjouterSmartphone from "./AjouterSmartphone.jsx";
 import DetaillerSmartphone from "./DetaillerSmartphone.jsx";
 import EditerSmartphone from "./EditerSmartphone.jsx";
 
-// Backend Express
-const API_BASE = "http://localhost:5000/api/smartphones";
+// -------------------------------
+// Ancienne valeur localhost, à remplacer par la variable d'env Vite
+// const API_BASE = "http://localhost:5000/api/smartphones";
+const API_BASE = import.meta.env.VITE_API_URL; // <-- Nouvelle valeur, pointe vers Ingress
+// -------------------------------
 
 function Classe() {
   const [smartphones, setSmartphones] = useState([]);
@@ -38,7 +41,7 @@ function Classe() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(phone),
       });
-      await getSmartphones(); //  recharge depuis la base
+      await getSmartphones(); // recharge depuis la base
       setSection("list");
     } catch (err) {
       console.error(err);

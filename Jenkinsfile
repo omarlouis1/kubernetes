@@ -103,7 +103,8 @@ pipeline {
                     // Build du frontend avec la variable d'environnement du backend pointant vers Ingress
                     sh """
                     docker build -t $DOCKER_HUB_USER/$FRONT_IMAGE:latest \
-                     --build-arg REACT_APP_API_URL=http://myapp.local/api ./front
+                    --build-arg REACT_APP_API_URL=http://myapp.local/api ./front
+
                     """
                     sh "docker build -t $DOCKER_HUB_USER/$BACKEND_IMAGE:latest ./back"
                 }
