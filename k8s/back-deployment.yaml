@@ -18,5 +18,6 @@ spec:
         ports:
         - containerPort: 5001
         env:
-        - name: MONGO_URL
-          value: "mongodb://mongo-service:27017/mydb"
+        env:
+         - name: MONGO_URI
+           value: mongodb://mongo-service:27017/smartphoneDB   
