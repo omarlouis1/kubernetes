@@ -16,7 +16,7 @@ spec:
       - name: frontend
         image: seynabou02/react-frontend:latest
         ports:
-        - containerPort: 80    # Nginx écoute sur le port 80
+        - containerPort: 80
         env:
-        - name: REACT_APP_API_URL
+        - name: VITE_API_URL  # CHANGEZ ICI AUSSI
           value: "http://192.168.49.2:30001/api"

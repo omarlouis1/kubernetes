@@ -12,7 +12,7 @@ RUN npm install
 # Copier le code source
 COPY . .
 
-# Passer l'URL du backend au moment du build
+# Passer l'URL du backend au moment du build - CORRIGÉ pour Vite
 ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 
