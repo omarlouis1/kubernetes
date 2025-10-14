@@ -1,19 +1,19 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: apps/v1            # Version de l'API Kubernetes utilisée pour les Deployments
+kind: Deployment               # Type de ressource : Deployment pour gérer les pods
 metadata:
-  name: frontend
+  name: frontend               # Nom du Deployment
 spec:
-  replicas: 1
+  replicas: 1                  # Nombre de pods à lancer pour le frontend
   selector:
     matchLabels:
-      app: frontend
+      app: frontend            # Permet au Deployment de gérer les pods avec ce label
   template:
     metadata:
       labels:
-        app: frontend
+        app: frontend          # Label appliqué aux pods créés par ce Deployment
     spec:
       containers:
-      - name: frontend
-        image: seynabou02/react-frontend:latest
+      - name: frontend         # Nom du conteneur
+        image: seynabou02/react-frontend:latest   # Image Docker à utiliser
         ports:
-        - containerPort: 5173
+        - containerPort: 5173  # Port exposé par le conteneur à l'intérieur du pod

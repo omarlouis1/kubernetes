@@ -1,12 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: frontend-service
+  name: frontend-service   # Nom du service
 spec:
-  type: NodePort
+  type: NodePort           # Expose le service sur un port du nœud
   selector:
-    app: frontend
+    app: frontend          # Lie le service aux pods avec le label app=frontend
   ports:
     - protocol: TCP
-      port: 5173
-      targetPort: 5173
+      port: 5173           # Port interne du service
+      targetPort: 5173     # Port du conteneur frontend
+      nodePort: 31000      # Port exposé sur le nœud (à accéder depuis l’extérieur)
