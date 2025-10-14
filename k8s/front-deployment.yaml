@@ -17,3 +17,8 @@ spec:
         image: seynabou02/react-frontend:latest   # Image Docker à utiliser
         ports:
         - containerPort: 5173  # Port exposé par le conteneur à l'intérieur du pod
+
+        # ✅ Variable d'environnement pour dire au frontend où trouver l'API backend
+        env:
+          - name: REACT_APP_API_URL
+            value: "http://192.168.49.2:31001"

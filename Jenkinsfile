@@ -100,7 +100,11 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 script {
-                    sh "docker build -t $DOCKER_HUB_USER/$FRONT_IMAGE:latest ./front"
+                    //sh "docker build -t $DOCKER_HUB_USER/$FRONT_IMAGE:latest ./front"
+                    sh """
+                    docker build -t seynabou02/react-frontend:latest \
+                     --build-arg REACT_APP_API_URL=http://backend-service:5000 .
+                     """
                     sh "docker build -t $DOCKER_HUB_USER/$BACKEND_IMAGE:latest ./back"
                 }
             }

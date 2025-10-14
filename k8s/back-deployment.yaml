@@ -16,7 +16,7 @@ spec:
       - name: backend  # Nom du conteneur
         image: seynabou02/express-backend:latest  # Image Docker du backend
         ports:
-        - containerPort: 5001  # Port exposé par le conteneur
+        - containerPort: 5000  # Port exposé par le conteneur
         env:  # Variables d'environnement
          - name: MONGO_URI
            value: mongodb://mongo-service:27017/smartphoneDB  # Connexion à MongoDB via le service
