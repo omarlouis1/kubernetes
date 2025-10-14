@@ -16,10 +16,7 @@ spec:
       - name: frontend
         image: seynabou02/react-frontend:latest
         ports:
-        - containerPort: 5173
+        - containerPort: 80    # Nginx écoute sur le port 80
         env:
         - name: REACT_APP_API_URL
-          value: "http://192.168.49.2:30001/api"  # URL externe pour le browser
-        # Ou gardez l'interne pour les appels depuis le container
-        # - name: REACT_APP_API_URL  
-        #   value: "http://backend-service:5000/api"
+          value: "http://192.168.49.2:30001/api"
