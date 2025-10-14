@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const smartphoneSchema = new mongoose.Schema({
-    id: { type: Number, unique: true },      
+    // SUPPRIMEZ le champ id - MongoDB génère _id automatiquement
     nom: { type: String, required: true },   
     marque: { type: String, required: true },
     prix: { type: Number, required: true },
@@ -14,7 +14,7 @@ const smartphoneSchema = new mongoose.Schema({
         ecran: { type: String }    
     },
 
-    photos: { type: [String] },   // tableau d’images
+    photos: { type: [String] },   // tableau d'images
     couleurs: { type: [String] }  // couleurs disponibles
 });
 

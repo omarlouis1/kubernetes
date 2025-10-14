@@ -1,22 +1,17 @@
 const Smartphone = require('../models/smartphone');
 
-// Ajouter un smartphone avec id auto-incrément
+// Ajouter un smartphone - CORRIGÉ (plus besoin d'id auto-incrément)
 exports.addSmartphone = async (req, res) => {
   try {
-    // Récupérer le smartphone avec le plus grand id existant
-    const lastSmartphone = await Smartphone.findOne().sort({ id: -1 }).exec();
-    const nextId = lastSmartphone ? lastSmartphone.id + 1 : 1;
-
-    // Création du smartphone avec id incrémenté
-    const smartphone = await Smartphone.create({ ...req.body, id: nextId });
+    // Création du smartphone - MongoDB génère _id automatiquement
+    const smartphone = await Smartphone.create(req.body);
     res.status(201).json(smartphone);
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 };
 
-
-// Récupérer tous les smartphones
+// Récupérer tous les smartphones - DÉJÀ CORRECT
 exports.getAllSmartphones = async (req, res) => {
     try {
         const smartphones = await Smartphone.find(); // Tous les documents
@@ -26,10 +21,10 @@ exports.getAllSmartphones = async (req, res) => {
     }
 };
 
-// Récupérer un smartphone par ID
+// Récupérer un smartphone par ID - CORRIGÉ pour utiliser _id
 exports.getSmartphoneById = async (req, res) => {
     try {
-        const smartphone = await Smartphone.findOne({ id: req.params.id });
+        const smartphone = await Smartphone.findById(req.params.id); // Utilise _id
         if (!smartphone) {
             return res.status(404).json({ message: 'Smartphone non trouvé' });
         }
@@ -39,13 +34,13 @@ exports.getSmartphoneById = async (req, res) => {
     }
 };
 
-// Modifier un smartphone
+// Modifier un smartphone - CORRIGÉ pour utiliser _id
 exports.updateSmartphone = async (req, res) => {
     try {
-        const updatedSmartphone = await Smartphone.findOneAndUpdate(
-            { id: req.params.id },    // Trouver par ID
-            req.body,                 // Nouveau contenu
-            { new: true }             
+        const updatedSmartphone = await Smartphone.findByIdAndUpdate(
+            req.params.id,    // Trouver par _id
+            req.body,         // Nouveau contenu
+            { new: true, runValidators: true } // Retourne le doc modifié + validation
         );
 
         if (!updatedSmartphone) {
@@ -57,10 +52,10 @@ exports.updateSmartphone = async (req, res) => {
     }
 };
 
-// Supprimer un smartphone
+// Supprimer un smartphone - CORRIGÉ pour utiliser _id
 exports.deleteSmartphone = async (req, res) => {
     try {
-        const deletedSmartphone = await Smartphone.findOneAndDelete({ id: req.params.id });
+        const deletedSmartphone = await Smartphone.findByIdAndDelete(req.params.id); // Utilise _id
         if (!deletedSmartphone) {
             return res.status(404).json({ message: 'Smartphone non trouvé' });
         }
@@ -69,6 +64,3 @@ exports.deleteSmartphone = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
-
-
-
