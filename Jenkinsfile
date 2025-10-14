@@ -69,17 +69,17 @@ pipeline {
                 }
             }
         }
-        //Vérifie si le code passe le Quality Gate et arrête le pipeline si échoué
-       // stage("Quality Gate") {
-         //   steps {
-           //     echo "Vérification du Quality Gate"
-                // Timeout fixé à 10 minutes pour attendre la réponse de SonarQube
-             //   timeout(time: 10, unit: 'MINUTES') {
-                    // si le Quality Gate échoue, le pipeline est stoppé
-               //     waitForQualityGate(abortPipeline: true)
-              //  }
-          //  }
-       // }
+        /*Vérifie si le code passe le Quality Gate et arrête le pipeline si échoué
+        stage("Quality Gate") {
+            steps {
+                echo "Vérification du Quality Gate"
+               Timeout fixé à 10 minutes pour attendre la réponse de SonarQube
+               timeout(time: 10, unit: 'MINUTES') {
+                     si le Quality Gate échoue, le pipeline est stoppé
+                    waitForQualityGate(abortPipeline: true)
+                }
+            }
+        }*/
 
 
         // ----------------------------
@@ -125,63 +125,63 @@ pipeline {
             }
         }
 
-        //stage('Check Docker & Compose') {
-        //    steps {
-        //        sh 'docker --version'
-        //        sh 'docker-compose --version || echo "docker-compose non trouvé"'
-        //    }
-       // }
+        /*stage('Check Docker & Compose') {
+            steps {
+                sh 'docker --version'
+                sh 'docker-compose --version || echo "docker-compose non trouvé"'
+           }
+        }*/
 
-       // stage('Deploy (compose.yaml)') {
-       //     steps {
-       //         dir('.') {
-       //             sh 'docker-compose -f compose.yaml down || true'
-       //             sh 'docker-compose -f compose.yaml pull'
-       //             sh 'docker-compose -f compose.yaml up -d'
-       //             sh 'docker-compose -f compose.yaml ps'
-       //             sh 'docker-compose -f compose.yaml logs --tail=50'
-       //         }
-       //     }
-       // }
+       /* stage('Deploy (compose.yaml)') {
+            steps {
+                dir('.') {
+                    sh 'docker-compose -f compose.yaml down || true'
+                    sh 'docker-compose -f compose.yaml pull'
+                    sh 'docker-compose -f compose.yaml up -d'
+                    sh 'docker-compose -f compose.yaml ps'
+                    sh 'docker-compose -f compose.yaml logs --tail=50'
+                }
+            }
+       }*/ 
 
        stage('Deploy to Kubernetes') {
-    steps {
-        withKubeConfig([credentialsId: 'kubeconfig-jenkins']) {
-            // Déployer MongoDB
-            sh "kubectl apply -f k8s/mongo-deployment.yaml"
-            sh "kubectl apply -f k8s/mongo-service.yaml"
+        steps {
+            withKubeConfig([credentialsId: 'kubeconfig-jenkins']) {
+                // Déployer MongoDB
+                sh "kubectl apply -f k8s/mongo-deployment.yaml"
+                sh "kubectl apply -f k8s/mongo-service.yaml"
 
-            // Déployer backend
-            sh "kubectl apply -f k8s/back-deployment.yaml"
-            sh "kubectl apply -f k8s/back-service.yaml"
+                // Déployer backend
+                sh "kubectl apply -f k8s/back-deployment.yaml"
+                sh "kubectl apply -f k8s/back-service.yaml"
 
-            // Déployer frontend
-            sh "kubectl apply -f k8s/front-deployment.yaml"
-            sh "kubectl apply -f k8s/front-service.yaml"
+                // Déployer frontend
+                sh "kubectl apply -f k8s/front-deployment.yaml"
+                sh "kubectl apply -f k8s/front-service.yaml"
 
-            // Vérifier que les pods sont Running
-            sh "kubectl rollout status deployment/mongo"
-            sh "kubectl rollout status deployment/backend"
-            sh "kubectl rollout status deployment/frontend"
+                // Vérifier que les pods sont Running
+                sh "kubectl rollout status deployment/mongo"
+                sh "kubectl rollout status deployment/backend"
+                sh "kubectl rollout status deployment/frontend"
+            }
         }
     }
-}
 
 
-      //  stage('Smoke Test') {
-      //      steps {
-      //          sh '''
-      //              echo "Vérification Frontend (port 5173)..."
-      //              curl -f http://localhost:5173 || echo "Frontend unreachable"
-      //
-      //              echo "Vérification Backend (port 5001)..."
-      //              curl -f http://localhost:5001/api || echo "Backend unreachable"
-      //          '''
-      //      }
-      // }
+      /*  stage('Smoke Test') {
+            steps {
+                sh '''
+                    echo "Vérification Frontend (port 5173)..."
+                    curl -f http://localhost:5173 || echo "Frontend unreachable"
+      
+                    echo "Vérification Backend (port 5001)..."
+                    curl -f http://localhost:5001/api || echo "Backend unreachable"
+                '''
+            }
+       }
 
 
-     /*stage('Smoke Test') {
+     stage('Smoke Test') {
     steps {
         sh '''
             NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
