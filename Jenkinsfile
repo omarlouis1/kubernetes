@@ -53,7 +53,7 @@ pipeline {
         // SonarQube
         // ----------------------------
         //// Analyse le code avec SonarQube
-         stage('SonarQube Analysis') {
+        stage('SonarQube Analysis') {
             steps {
                 echo "Analyse du code avec SonarQube"
                 withSonarQubeEnv('Sonarqube_local') {
@@ -69,6 +69,7 @@ pipeline {
                 }
             }
         }
+
         /*Vérifie si le code passe le Quality Gate et arrête le pipeline si échoué
         stage("Quality Gate") {
             steps {
@@ -80,7 +81,6 @@ pipeline {
                 }
             }
         }*/
-
 
         // ----------------------------
         // Tests
@@ -100,11 +100,11 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 script {
-                    //sh "docker build -t $DOCKER_HUB_USER/$FRONT_IMAGE:latest ./front"
+                    // Build du frontend avec la variable d'environnement du backend pointant vers Ingress
                     sh """
-                    docker build -t seynabou02/react-frontend:latest \
-                     --build-arg REACT_APP_API_URL=http://backend-service:5000 .
-                     """
+                    docker build -t $DOCKER_HUB_USER/$FRONT_IMAGE:latest \
+                     --build-arg REACT_APP_API_URL=http://myapp.local/api ./front
+                    """
                     sh "docker build -t $DOCKER_HUB_USER/$BACKEND_IMAGE:latest ./back"
                 }
             }
@@ -136,7 +136,7 @@ pipeline {
            }
         }*/
 
-       /* stage('Deploy (compose.yaml)') {
+        /* stage('Deploy (compose.yaml)') {
             steps {
                 dir('.') {
                     sh 'docker-compose -f compose.yaml down || true'
@@ -148,31 +148,30 @@ pipeline {
             }
        }*/ 
 
-       stage('Deploy to Kubernetes') {
-        steps {
-            withKubeConfig([credentialsId: 'kubeconfig-jenkins']) {
-                // Déployer MongoDB
-                sh "kubectl apply -f k8s/mongo-deployment.yaml"
-                sh "kubectl apply -f k8s/mongo-service.yaml"
+        stage('Deploy to Kubernetes') {
+            steps {
+                withKubeConfig([credentialsId: 'kubeconfig-jenkins']) {
+                    // Déployer MongoDB
+                    sh "kubectl apply -f k8s/mongo-deployment.yaml"
+                    sh "kubectl apply -f k8s/mongo-service.yaml"
 
-                // Déployer backend
-                sh "kubectl apply -f k8s/back-deployment.yaml"
-                sh "kubectl apply -f k8s/back-service.yaml"
+                    // Déployer backend
+                    sh "kubectl apply -f k8s/back-deployment.yaml"
+                    sh "kubectl apply -f k8s/back-service.yaml"
 
-                // Déployer frontend
-                sh "kubectl apply -f k8s/front-deployment.yaml"
-                sh "kubectl apply -f k8s/front-service.yaml"
+                    // Déployer frontend
+                    sh "kubectl apply -f k8s/front-deployment.yaml"
+                    sh "kubectl apply -f k8s/front-service.yaml"
 
-                // Vérifier que les pods sont Running
-                sh "kubectl rollout status deployment/mongo"
-                sh "kubectl rollout status deployment/backend"
-                sh "kubectl rollout status deployment/frontend"
+                    // Vérifier que les pods sont Running
+                    sh "kubectl rollout status deployment/mongo"
+                    sh "kubectl rollout status deployment/backend"
+                    sh "kubectl rollout status deployment/frontend"
+                }
             }
         }
-    }
 
-
-      /*  stage('Smoke Test') {
+        /*  stage('Smoke Test') {
             steps {
                 sh '''
                     echo "Vérification Frontend (port 5173)..."
@@ -182,27 +181,25 @@ pipeline {
                     curl -f http://localhost:5001/api || echo "Backend unreachable"
                 '''
             }
-       }
+       }*/
 
+       /*stage('Smoke Test') {
+            steps {
+                sh '''
+                    NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+                    FRONT_PORT=$(kubectl get service frontend-service -o jsonpath='{.spec.ports[0].nodePort}')
+                    BACK_PORT=$(kubectl get service backend-service -o jsonpath='{.spec.ports[0].nodePort}')
 
-     stage('Smoke Test') {
-    steps {
-        sh '''
-            NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
-            FRONT_PORT=$(kubectl get service frontend-service -o jsonpath='{.spec.ports[0].nodePort}')
-            BACK_PORT=$(kubectl get service backend-service -o jsonpath='{.spec.ports[0].nodePort}')
+                    FRONT_URL=http://$NODE_IP:$FRONT_PORT
+                    BACK_URL=http://$NODE_IP:$BACK_PORT
 
-            FRONT_URL=http://$NODE_IP:$FRONT_PORT
-            BACK_URL=http://$NODE_IP:$BACK_PORT
+                    curl -f $FRONT_URL || echo "Frontend unreachable"
+                    curl -f $BACK_URL/api || echo "Backend unreachable"
+                '''
+            }
+        }*/
 
-            curl -f $FRONT_URL || echo "Frontend unreachable"
-            curl -f $BACK_URL/api || echo "Backend unreachable"
-        '''
     }
-}*/
-
-
-   }
 
     post {
         success {

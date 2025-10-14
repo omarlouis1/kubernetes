@@ -3,11 +3,11 @@ kind: Service
 metadata:
   name: frontend-service   # Nom du service
 spec:
-  type: NodePort           # Expose le service sur un port du nœud
+  type: ClusterIP           # Ingress fera le routage
   selector:
     app: frontend          # Lie le service aux pods avec le label app=frontend
   ports:
     - protocol: TCP
       port: 5173           # Port interne du service
       targetPort: 5173     # Port du conteneur frontend
-      nodePort: 31000      # Port exposé sur le nœud (à accéder depuis l’extérieur)
+#      nodePort: 31000       Port exposé sur le nœud (à accéder depuis l’extérieur)
