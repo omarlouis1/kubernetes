@@ -49,14 +49,15 @@ function Classe() {
       });
       
       if (!response.ok) {
-        throw new Error(`Erreur: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(`Erreur: ${response.status} - ${errorData.message || 'Erreur inconnue'}`);
       }
       
       await getSmartphones(); // recharge depuis la base
       setSection("list");
     } catch (err) {
       console.error(err);
-      alert("Erreur lors de l'ajout");
+      alert("Erreur lors de l'ajout: " + err.message);
     }
   };
 
@@ -86,19 +87,28 @@ function Classe() {
     }
   };
 
-  // Voir détail
+  // Voir détail - CORRIGÉ avec meilleur debug
   const voirDetail = async (phone) => {
     try {
-      const res = await fetch(`${API_BASE}/${phone._id || phone.id}`);
+      // Utilise _id pour MongoDB (prioritaire)
+      const id = phone._id || phone.id;
+      console.log("ID utilisé pour détail:", id, "Phone:", phone);
+      
+      const res = await fetch(`${API_BASE}/${id}`);
+      
       if (!res.ok) {
-        throw new Error(`Erreur: ${res.status}`);
+        const errorText = await res.text();
+        console.error("Erreur détail - réponse:", res.status, errorText);
+        throw new Error(`Erreur ${res.status}: ${errorText}`);
       }
+      
       const data = await res.json();
+      console.log("Détails reçus:", data);
       setSelectedPhone(data);
       setSection("detail");
     } catch (err) {
-      console.error(err);
-      alert("Erreur lors du chargement des détails");
+      console.error("Erreur détail complète:", err);
+      alert("Erreur lors du chargement des détails: " + err.message);
     }
   };
 
@@ -108,10 +118,12 @@ function Classe() {
     setSection("edit");
   };
 
-  // Sauvegarder édition
+  // Sauvegarder édition - CORRIGÉ avec meilleur debug
   const sauvegarderEdition = async (updatedPhone) => {
     try {
       const id = updatedPhone._id || updatedPhone.id;
+      console.log("Édition - ID:", id, "Data:", updatedPhone);
+      
       const response = await fetch(`${API_BASE}/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -119,7 +131,8 @@ function Classe() {
       });
       
       if (!response.ok) {
-        throw new Error(`Erreur: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(`Erreur ${response.status}: ${errorData.message || 'Erreur inconnue'}`);
       }
       
       await getSmartphones(); // recharge depuis la base
@@ -127,7 +140,7 @@ function Classe() {
       setEditingPhone(null);
     } catch (err) {
       console.error(err);
-      alert("Erreur lors de la modification");
+      alert("Erreur lors de la modification: " + err.message);
     }
   };
 

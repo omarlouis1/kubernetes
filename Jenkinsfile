@@ -100,16 +100,15 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 script {
-                    // Build du frontend avec la variable d'environnement du backend pointant vers Ingress
+                    // Build du frontend avec la variable VITE (au lieu de REACT_APP)
                     sh """
                     docker build -t $DOCKER_HUB_USER/$FRONT_IMAGE:latest \
-                    --build-arg REACT_APP_API_URL=http://myapp.local/api ./front
-
+                    --build-arg VITE_API_URL=http://myapp.local/api ./front
                     """
                     sh "docker build -t $DOCKER_HUB_USER/$BACKEND_IMAGE:latest ./back"
                 }
             }
-        }
+}
 
         stage('Push Docker Images') {
             steps {
