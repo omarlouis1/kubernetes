@@ -36,18 +36,23 @@ pipeline {
         // ----------------------------
         // Vérification Cluster Kubernetes
         // ----------------------------
-       /* stage('Verify Kubernetes Cluster') {
+        stage('Verify Kubernetes Cluster') {
             steps {
                 withKubeConfig([credentialsId: 'kubeconfig-jenkins']) {
                     script {
                         sh '''
                             echo "🔍 Vérification du cluster Kubernetes..."
                             
-                            # Vérifier que Minikube est démarré
-                            minikube status --wait=true --interval=10s --timeout=180s || {
-                                echo "❌ Minikube n'est pas démarré. Démarrage en cours..."
+                            # Vérifier et démarrer Minikube si nécessaire
+                            if ! minikube status >/dev/null 2>&1; then
+                                echo "🚀 Minikube n'est pas démarré. Démarrage en cours..."
                                 minikube start
-                            }
+                            else
+                                echo "✅ Minikube est déjà démarré"
+                            fi
+                            
+                            # Attendre que Minikube soit ready
+                            minikube status --wait=true --interval=10s --timeout=180s
                             
                             # Vérifier la connexion Kubernetes
                             kubectl cluster-info
@@ -58,7 +63,7 @@ pipeline {
                     }
                 }
             }
-        }*/
+        }
 
         stage('Install dependencies - Backend') {
             steps {
@@ -127,17 +132,10 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 script {
-                    // Obtenir l'IP dynamique de Minikube
-                    sh '''
-                        MINIKUBE_IP=$(minikube ip)
-                        echo "🎯 Minikube IP actuelle: $MINIKUBE_IP"
-                    '''
-                    
-                    // Build du frontend avec l'IP DYNAMIQUE
+                    // Build du frontend avec URL INTERNE Kubernetes (solution recommandée)
                     sh """
-                        MINIKUBE_IP=\$(minikube ip)
-                        docker build -t $DOCKER_HUB_USER/$FRONT_IMAGE:latest \
-                        --build-arg VITE_API_URL=http://\\$MINIKUBE_IP:30001/api ./front
+                    docker build -t $DOCKER_HUB_USER/$FRONT_IMAGE:latest \
+                    --build-arg VITE_API_URL=http://backend-service:5000/api ./front
                     """
                     sh "docker build -t $DOCKER_HUB_USER/$BACKEND_IMAGE:latest ./back"
                 }
@@ -189,30 +187,26 @@ pipeline {
             steps {
                 withKubeConfig([credentialsId: 'kubeconfig-jenkins']) {
                     script {
-                        // Obtenir l'IP actuelle pour la mise à jour
-                        def MINIKUBE_IP = sh(
-                            script: 'minikube ip',
-                            returnStdout: true
-                        ).trim()
+                        echo "🎯 Déploiement sur Kubernetes..."
                         
-                        echo "🎯 Déploiement avec IP: ${MINIKUBE_IP}"
+                        // Nettoyer les anciens déploiements s'ils existent
+                        sh '''
+                            kubectl delete deployment frontend backend mongo 2>/dev/null || true
+                            kubectl delete service frontend-service backend-service mongo-service 2>/dev/null || true
+                            sleep 10
+                        '''
                         
-                        // Appliquer tous les fichiers YAML (crée les déploiements s'ils n'existent pas)
+                        // Appliquer tous les fichiers YAML
                         sh "kubectl apply -f k8s/"
                         
                         // Attendre que les ressources soient créées
                         sleep 30
                         
-                        // Mettre à jour l'URL API avec l'IP dynamique
-                        sh """
-                            kubectl set env deployment/frontend VITE_API_URL=http://${MINIKUBE_IP}:30001/api --ignore-not-found
-                        """
-                        
                         // Vérifier que les pods sont Running avec timeout
                         sh """
-                            kubectl rollout status deployment/mongo --timeout=300s || echo "⚠️ MongoDB en cours de démarrage"
-                            kubectl rollout status deployment/backend --timeout=300s || echo "⚠️ Backend en cours de démarrage" 
-                            kubectl rollout status deployment/frontend --timeout=300s || echo "⚠️ Frontend en cours de démarrage"
+                            kubectl wait --for=condition=ready pod -l app=mongo --timeout=300s
+                            kubectl wait --for=condition=ready pod -l app=backend --timeout=300s
+                            kubectl wait --for=condition=ready pod -l app=frontend --timeout=300s
                         """
                     }
                 }
@@ -230,29 +224,25 @@ pipeline {
                             echo "🎯 INFORMATIONS APPLICATION DÉPLOYÉE :"
                             echo "======================================"
                             
-                            # Obtenir les URLs via Minikube
-                            FRONT_URL=$(minikube service frontend-service --url)
-                            BACK_URL=$(minikube service backend-service --url)
-                            
-                            echo "🌐 Frontend: $FRONT_URL"
-                            echo "⚙️  Backend:  $BACK_URL"
-                            echo "📊 API Test: $BACK_URL/api/smartphones"
-                            
-                            # Alternative avec IP directe
+                            # Obtenir l'IP de Minikube
                             MINIKUBE_IP=$(minikube ip)
-                            FRONT_PORT=$(kubectl get service frontend-service -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null || echo "30002")
-                            BACK_PORT=$(kubectl get service backend-service -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null || echo "30001")
+                            echo "🌐 Minikube IP: $MINIKUBE_IP"
                             
+                            # Obtenir les URLs via Minikube
+                            echo "🔗 Génération des URLs..."
+                            minikube service list
+                            
+                            # URLs directes avec les ports fixes
                             echo ""
-                            echo "🔧 URLs alternatives:"
-                            echo "Frontend: http://$MINIKUBE_IP:$FRONT_PORT"
-                            echo "Backend:  http://$MINIKUBE_IP:$BACK_PORT/api/smartphones"
+                            echo "📍 URLs d'accès :"
+                            echo "Frontend: http://$MINIKUBE_IP:30002"
+                            echo "Backend:  http://$MINIKUBE_IP:30001/api/smartphones"
                             
                             # Test de santé basique
                             echo ""
                             echo "🧪 Test de connectivité..."
-                            curl -f $FRONT_URL >/dev/null 2>&1 && echo "✅ Frontend accessible" || echo "⚠️ Frontend en cours de démarrage"
-                            curl -f $BACK_URL/api/smartphones >/dev/null 2>&1 && echo "✅ Backend accessible" || echo "⚠️ Backend en cours de démarrage"
+                            curl -f http://$MINIKUBE_IP:30002 >/dev/null 2>&1 && echo "✅ Frontend accessible" || echo "⚠️ Frontend en cours de démarrage"
+                            curl -f http://$MINIKUBE_IP:30001/api/smartphones >/dev/null 2>&1 && echo "✅ Backend accessible" || echo "⚠️ Backend en cours de démarrage"
                         '''
                     }
                 }
@@ -292,14 +282,9 @@ pipeline {
     post {
         success {
             script {
-                // Récupérer les URLs pour l'email
-                def FRONT_URL = sh(
-                    script: 'minikube service frontend-service --url',
-                    returnStdout: true
-                ).trim()
-                
-                def BACK_URL = sh(
-                    script: 'minikube service backend-service --url', 
+                // Récupérer l'IP pour l'email
+                def MINIKUBE_IP = sh(
+                    script: 'minikube ip',
                     returnStdout: true
                 ).trim()
                 
@@ -309,9 +294,9 @@ pipeline {
                     Pipeline exécuté avec succès!
                     
                     📍 Votre application est déployée :
-                    Frontend: ${FRONT_URL}
-                    Backend:  ${BACK_URL}
-                    API Test: ${BACK_URL}/api/smartphones
+                    Frontend: http://${MINIKUBE_IP}:30002
+                    Backend:  http://${MINIKUBE_IP}:30001/api/smartphones
+                    API Test: http://${MINIKUBE_IP}:30001/api/smartphones
                     
                     Détails du build: ${env.BUILD_URL}
                     """,
