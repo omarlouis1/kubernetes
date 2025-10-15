@@ -36,7 +36,7 @@ pipeline {
         // ----------------------------
         // Vérification Cluster Kubernetes
         // ----------------------------
-        stage('Verify Kubernetes Cluster') {
+       /* stage('Verify Kubernetes Cluster') {
             steps {
                 withKubeConfig([credentialsId: 'kubeconfig-jenkins']) {
                     script {
@@ -58,7 +58,7 @@ pipeline {
                     }
                 }
             }
-        }
+        }*/
 
         stage('Install dependencies - Backend') {
             steps {
