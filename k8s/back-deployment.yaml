@@ -2,24 +2,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: backend
+  name: backend   # Nom du déploiement
 spec:
-  replicas: 1
+  replicas: 1     # Nombre de pods backend à exécuter
   selector:
     matchLabels:
-      app: backend
+      app: backend   # Permet d’identifier les pods gérés par ce déploiement
   template:
     metadata:
       labels:
-        app: backend
+        app: backend   # Étiquette appliquée au pod
     spec:
       containers:
-      - name: backend
-        image: seynabou02/express-backend:latest
+      - name: backend   # Nom du conteneur
+        image: seynabou02/express-backend:latest   # Image Docker à déployer
         ports:
-        - containerPort: 5000
+        - containerPort: 5000   # Port exposé dans le conteneur
         env:
         - name: MONGODB_URI
-          value: "mongodb://mongo-service:27017/smartphoneDB"
+          value: "mongodb://mongo-service:27017/smartphoneDB"  # URL du service MongoDB
         - name: PORT
-          value: "5000"
+          value: "5000"   # Port utilisé par le serveur backend
