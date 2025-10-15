@@ -21,4 +21,4 @@ spec:
         # Si vous n'utilisez pas nginx, vous pouvez exposer le port de développement Vite (5173)
         env:
         - name: VITE_API_URL  
-          value: "http://192.168.49.2:30001/api"  # URL vers le backend via NodePort
+          value: "http://172.17.0.2:30001/api"  # URL vers le backend via NodePort
