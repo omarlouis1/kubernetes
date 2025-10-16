@@ -33,38 +33,6 @@ pipeline {
             }
         }
 
-        // ----------------------------
-        // Vérification Cluster Kubernetes
-        // ----------------------------
-       /* stage('Verify Kubernetes Cluster') {
-            steps {
-                withKubeConfig([credentialsId: 'kubeconfig-jenkins']) {
-                    script {
-                        sh '''
-                            echo "🔍 Vérification du cluster Kubernetes..."
-                            
-                            # Vérifier et démarrer Minikube si nécessaire
-                            if ! minikube status >/dev/null 2>&1; then
-                                echo "🚀 Minikube n'est pas démarré. Démarrage en cours..."
-                                minikube start
-                            else
-                                echo "✅ Minikube est déjà démarré"
-                            fi
-                            
-                            # Attendre que Minikube soit ready
-                            minikube status --wait=true --interval=10s --timeout=180s
-                            
-                            # Vérifier la connexion Kubernetes
-                            kubectl cluster-info
-                            kubectl get nodes
-                            
-                            echo "✅ Cluster Kubernetes prêt"
-                        '''
-                    }
-                }
-            }
-        }*/
-
         stage('Install dependencies - Backend') {
             steps {
                 dir('back') {
@@ -132,15 +100,15 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 script {
-                    // Build du frontend avec URL INTERNE Kubernetes (solution recommandée)
+                    // Build du frontend avec la variable VITE (au lieu de REACT_APP)
                     sh """
                     docker build -t $DOCKER_HUB_USER/$FRONT_IMAGE:latest \
-                    --build-arg VITE_API_URL=http://backend-service:5000/api ./front
+                    --build-arg VITE_API_URL=http://myapp.local/api ./front
                     """
                     sh "docker build -t $DOCKER_HUB_USER/$BACKEND_IMAGE:latest ./back"
                 }
             }
-        }
+}
 
         stage('Push Docker Images') {
             steps {
@@ -180,71 +148,25 @@ pipeline {
             }
        }*/ 
 
-        // ----------------------------
-        // Déploiement Kubernetes
-        // ----------------------------
         stage('Deploy to Kubernetes') {
             steps {
                 withKubeConfig([credentialsId: 'kubeconfig-jenkins']) {
-                    script {
-                        echo "🎯 Déploiement sur Kubernetes..."
-                        
-                        // Nettoyer les anciens déploiements s'ils existent
-                        sh '''
-                            kubectl delete deployment frontend backend mongo 2>/dev/null || true
-                            kubectl delete service frontend-service backend-service mongo-service 2>/dev/null || true
-                            sleep 10
-                        '''
-                        
-                        // Appliquer tous les fichiers YAML
-                        sh "kubectl apply -f k8s/"
-                        
-                        // Attendre que les ressources soient créées
-                        sleep 30
-                        
-                        // Vérifier que les pods sont Running avec timeout
-                        sh """
-                            kubectl wait --for=condition=ready pod -l app=mongo --timeout=300s
-                            kubectl wait --for=condition=ready pod -l app=backend --timeout=300s
-                            kubectl wait --for=condition=ready pod -l app=frontend --timeout=300s
-                        """
-                    }
-                }
-            }
-        }
+                    // Déployer MongoDB
+                    sh "kubectl apply -f k8s/mongo-deployment.yaml"
+                    sh "kubectl apply -f k8s/mongo-service.yaml"
 
-        // ----------------------------
-        // Vérification Application
-        // ----------------------------
-        stage('Display Application Info') {
-            steps {
-                withKubeConfig([credentialsId: 'kubeconfig-jenkins']) {
-                    script {
-                        sh '''
-                            echo "🎯 INFORMATIONS APPLICATION DÉPLOYÉE :"
-                            echo "======================================"
-                            
-                            # Obtenir l'IP de Minikube
-                            MINIKUBE_IP=$(minikube ip)
-                            echo "🌐 Minikube IP: $MINIKUBE_IP"
-                            
-                            # Obtenir les URLs via Minikube
-                            echo "🔗 Génération des URLs..."
-                            minikube service list
-                            
-                            # URLs directes avec les ports fixes
-                            echo ""
-                            echo "📍 URLs d'accès :"
-                            echo "Frontend: http://$MINIKUBE_IP:30002"
-                            echo "Backend:  http://$MINIKUBE_IP:30001/api/smartphones"
-                            
-                            # Test de santé basique
-                            echo ""
-                            echo "🧪 Test de connectivité..."
-                            curl -f http://$MINIKUBE_IP:30002 >/dev/null 2>&1 && echo "✅ Frontend accessible" || echo "⚠️ Frontend en cours de démarrage"
-                            curl -f http://$MINIKUBE_IP:30001/api/smartphones >/dev/null 2>&1 && echo "✅ Backend accessible" || echo "⚠️ Backend en cours de démarrage"
-                        '''
-                    }
+                    // Déployer backend
+                    sh "kubectl apply -f k8s/back-deployment.yaml"
+                    sh "kubectl apply -f k8s/back-service.yaml"
+
+                    // Déployer frontend
+                    sh "kubectl apply -f k8s/front-deployment.yaml"
+                    sh "kubectl apply -f k8s/front-service.yaml"
+
+                    // Vérifier que les pods sont Running
+                    sh "kubectl rollout status deployment/mongo"
+                    sh "kubectl rollout status deployment/backend"
+                    sh "kubectl rollout status deployment/frontend"
                 }
             }
         }
@@ -281,32 +203,15 @@ pipeline {
 
     post {
         success {
-            script {
-                // Récupérer l'IP pour l'email
-                def MINIKUBE_IP = sh(
-                    script: 'minikube ip',
-                    returnStdout: true
-                ).trim()
-                
-                emailext(
-                    subject: "✅ Build SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                    body: """
-                    Pipeline exécuté avec succès!
-                    
-                    📍 Votre application est déployée :
-                    Frontend: http://${MINIKUBE_IP}:30002
-                    Backend:  http://${MINIKUBE_IP}:30001/api/smartphones
-                    API Test: http://${MINIKUBE_IP}:30001/api/smartphones
-                    
-                    Détails du build: ${env.BUILD_URL}
-                    """,
-                    to: "seynaboubadji26@gmail.com"
-                )
-            }
+            emailext(
+                subject: "Build SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "Pipeline réussi\nDétails : ${env.BUILD_URL}",
+                to: "seynaboubadji26@gmail.com"
+            )
         }
         failure {
             emailext(
-                subject: "❌ Build FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                subject: "Build FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: "Le pipeline a échoué\nDétails : ${env.BUILD_URL}",
                 to: "seynaboubadji26@gmail.com"
             )
