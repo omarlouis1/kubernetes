@@ -8,7 +8,9 @@ import EditerSmartphone from "./EditerSmartphone.jsx";
 // CORRECTION : Utilisez la variable correctement
 
 //const API_BASE = "http://localhost:5000/api/smartphones";
+//const API_BASE = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/smartphones`;
 const API_BASE = `${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/smartphones`;
+
 // -------------------------------
 
 function Classe() {
@@ -61,12 +63,23 @@ function Classe() {
     }
   };
 
-  // Supprimer smartphone
-  const supprimer = async (id) => {
+  // Supprimer smartphone - CORRIGÉ
+  const supprimer = async (phone) => {  // ✅ Changez le paramètre pour recevoir l'objet phone
+    // Utilise _id pour MongoDB (prioritaire)
+    const id = phone._id || phone.id;
+    
+    console.log("🔧 Suppression - ID utilisé:", id, "Phone:", phone); // Debug
+    
+    if (!id || id === "undefined") {
+      alert("Erreur: ID du smartphone non trouvé");
+      return;
+    }
+
     const code = prompt("Entrez le code de suppression :");
     if (!code) return;
 
     try {
+      console.log("🔧 URL de suppression:", `${API_BASE}/${id}`);
       const res = await fetch(`${API_BASE}/${id}`, {
         method: "DELETE",
         headers: {
@@ -82,8 +95,8 @@ function Classe() {
 
       await getSmartphones(); // recharge depuis la base
     } catch (err) {
-      console.error(err);
-      alert("Erreur lors de la suppression");
+      console.error("Erreur suppression:", err);
+      alert("Erreur lors de la suppression: " + err.message);
     }
   };
 
@@ -190,7 +203,7 @@ function Classe() {
         <SmartphoneList
           smartphones={filteredSmartphones}
           onSelect={voirDetail}
-          supprimer={supprimer}
+          supprimer={supprimer}  // ✅ Maintenant cette fonction reçoit l'objet phone complet
           onAdd={() => setSection("add")}
         />
       )}
