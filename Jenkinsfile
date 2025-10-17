@@ -94,22 +94,22 @@ pipeline {
             }
         }
 
-        // ----------------------------
+        /// ----------------------------
         // Docker
         // ----------------------------
         stage('Build Docker Images') {
             steps {
                 script {
-                    // Build du frontend avec la variable VITE (au lieu de REACT_APP)
+                    // Build du frontend avec l'URL INTERNE Kubernetes
                     sh """
                     docker build -t $DOCKER_HUB_USER/$FRONT_IMAGE:latest \
-                    --build-arg VITE_API_URL=http://myapp.local/api ./front
+                    --build-arg VITE_API_URL=http://backend-service:5000/api ./front
                     """
                     sh "docker build -t $DOCKER_HUB_USER/$BACKEND_IMAGE:latest ./back"
                 }
             }
-}
-
+        }
+        
         stage('Push Docker Images') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'DOCKER_CREDENTIALS', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
@@ -121,13 +121,14 @@ pipeline {
                 }
             }
         }
-
+        
         stage('Clean Docker') {
             steps {
                 sh 'docker container prune -f'
                 sh 'docker image prune -f'
             }
         }
+        
 
         /*stage('Check Docker & Compose') {
             steps {
