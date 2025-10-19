@@ -7,8 +7,8 @@ spec:
   selector:
     app: frontend
   ports:
-  - port: 5000          # Port externe du service
-    targetPort: 5000   # Port du container Nginx
+  - port: 5173          # Port externe du service
+    targetPort: 5173  # Port du container Nginx
     nodePort: 30002   # Port NodePort
 #    port: 5173
 #    targetPort: 5173
