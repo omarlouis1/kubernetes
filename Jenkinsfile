@@ -69,6 +69,7 @@ pipeline {
                 echo "🐳 Construction des images Docker..."
                 sh """
                     docker build -t $DOCKER_USER/$BACK_IMAGE:latest ./back
+                    docker build -t $DOCKER_USER/$FRONT_IMAGE:latest ./back
                     
                 """
             }
