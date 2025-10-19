@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: seynabou02/react-frontend:latest
+        image: kao123/react-frontend:latest
         ports:
         - containerPort: 80
         volumeMounts:
