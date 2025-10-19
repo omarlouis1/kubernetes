@@ -2,13 +2,13 @@ pipeline {
     agent any
 
     tools {
-        nodejs "NodeJS_22"
+        nodejs "NodeJS_16"
     }
 
     environment {
-        DOCKER_HUB_USER = 'seynabou02'
-        FRONT_IMAGE = 'react-frontend'
-        BACKEND_IMAGE = 'express-backend'
+        DOCKER_USER   = 'kao123'              // Ton identifiant Docker Hub
+        FRONT_IMAGE   = 'react-frontend'
+        BACK_IMAGE    = 'express-backend'
     }
 
     triggers {
@@ -18,8 +18,8 @@ pipeline {
                 [key: 'pusher_name', value: '$.pusher.name'],
                 [key: 'commit_message', value: '$.head_commit.message']
             ],
-            causeString: 'Push par $pusher_name sur $ref: "$commit_message"',
-            token: 'mywebhook',
+            causeString: 'Push par $pusher_name sur $ref : "$commit_message"',
+            token: 'mysecret',
             printContributedVariables: true,
             printPostContent: true
         )
@@ -29,129 +29,79 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/Seynabou26/full_stack_app.git'
+                echo "📦 Récupération du code depuis GitHub..."
+                git branch: 'main', url: 'https://github.com/omarlouis1/kubernetes.git'
             }
         }
 
-        stage('Install dependencies - Backend') {
-            steps {
-                dir('back') {
-                    sh 'npm install'
+        stage('Install Dependencies') {
+            parallel {
+                stage('Backend') {
+                    steps {
+                        dir('back') {
+                            sh 'npm install'
+                        }
+                    }
                 }
-            }
-        }
-
-        stage('Install dependencies - Frontend') {
-            steps {
-                dir('front') {
-                    sh 'npm install'
-                }
-            }
-        }
-
-        // ----------------------------
-        // SonarQube
-        // ----------------------------
-        //// Analyse le code avec SonarQube
-       /* stage('SonarQube Analysis') {
-            steps {
-                echo "Analyse du code avec SonarQube"
-                withSonarQubeEnv('Sonarqube_local') {
-                    withCredentials([string(credentialsId: 'sonarqube', variable: 'SONAR_TOKEN')]) {
-                        sh """
-                            ${tool('Sonarqube_scanner')}/bin/sonar-scanner \
-                            -Dsonar.projectKey=sonarqube \
-                            -Dsonar.sources=. \
-                            -Dsonar.host.url=$SONAR_HOST_URL \
-                            -Dsonar.login=$SONAR_TOKEN
-                        """
+                stage('Frontend') {
+                    steps {
+                        dir('front') {
+                            sh 'npm install'
+                        }
                     }
                 }
             }
         }
 
-        /*Vérifie si le code passe le Quality Gate et arrête le pipeline si échoué
-        stage("Quality Gate") {
+        stage('Run Tests') {
             steps {
-                echo "Vérification du Quality Gate"
-               Timeout fixé à 10 minutes pour attendre la réponse de SonarQube
-               timeout(time: 10, unit: 'MINUTES') {
-                     si le Quality Gate échoue, le pipeline est stoppé
-                    waitForQualityGate(abortPipeline: true)
-                }
-            }
-        }*/
-
-        // ----------------------------
-        // Tests
-        // ----------------------------
-        stage('Run tests') {
-            steps {
+                echo "🧪 Exécution des tests..."
                 script {
-                    sh 'cd back && npm test || echo "Aucun test backend"'
-                    sh 'cd front && npm test || echo "Aucun test frontend"'
+                    sh 'cd back-end && npm test || echo "⚠️ Aucun test backend"'
+                    sh 'cd front-end && npm test || echo "⚠️ Aucun test frontend"'
                 }
             }
         }
 
-        /// ----------------------------
-        // Docker
-        // ----------------------------
+  
         stage('Build Docker Images') {
             steps {
-                script {
-                    // Build du frontend avec l'URL INTERNE Kubernetes
-                    sh """
-                    docker build -t $DOCKER_HUB_USER/$FRONT_IMAGE:latest \
-                    --build-arg VITE_API_URL=http://backend-service:5000/api ./front
-                    """
-                    sh "docker build -t $DOCKER_HUB_USER/$BACKEND_IMAGE:latest ./back"
-                }
+                echo "🐳 Construction des images Docker..."
+                sh """
+                    docker build -t $DOCKER_USER/$BACK_IMAGE:latest ./back
+                    
+                """
             }
         }
-        
-        stage('Push Docker Images') {
+         stage('Push Docker Images') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'DOCKER_CREDENTIALS', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentiels', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                     sh '''
                         echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
                         docker push $DOCKER_USER/$FRONT_IMAGE:latest
-                        docker push $DOCKER_USER/$BACKEND_IMAGE:latest
+                        docker push $DOCKER_USER/$BACK_IMAGE:latest
                     '''
                 }
             }
         }
-        
-        stage('Clean Docker') {
-            steps {
-                sh 'docker container prune -f'
-                sh 'docker image prune -f'
-            }
-        }
-        
+      
 
-        /*stage('Check Docker & Compose') {
+
+        /*stage('Deploy') {
             steps {
-                sh 'docker --version'
-                sh 'docker-compose --version || echo "docker-compose non trouvé"'
-           }
+                echo "🚀 Déploiement via docker-compose..."
+                sh '''
+                    docker-compose -f compose.yaml down || true
+                    docker-compose -f compose.yaml pull
+                    docker-compose -f compose.yaml up -d
+                    docker-compose ps
+                '''
+            }
         }*/
 
-        /* stage('Deploy (compose.yaml)') {
+         stage('Deploy to Kubernetes') {
             steps {
-                dir('.') {
-                    sh 'docker-compose -f compose.yaml down || true'
-                    sh 'docker-compose -f compose.yaml pull'
-                    sh 'docker-compose -f compose.yaml up -d'
-                    sh 'docker-compose -f compose.yaml ps'
-                    sh 'docker-compose -f compose.yaml logs --tail=50'
-                }
-            }
-       }*/ 
-
-        stage('Deploy to Kubernetes') {
-            steps {
-                withKubeConfig([credentialsId: 'kubeconfig-jenkins']) {
+                withKubeConfig([credentialsId: 'kubeconfig']) {
                     // Déployer MongoDB
                     sh "kubectl apply -f k8s/mongo-deployment.yaml"
                     sh "kubectl apply -f k8s/mongo-service.yaml"
@@ -172,49 +122,37 @@ pipeline {
             }
         }
 
-        /*  stage('Smoke Test') {
+        stage('Smoke Test') {
             steps {
+                echo "🔎 Vérification des services..."
                 sh '''
-                    echo "Vérification Frontend (port 5173)..."
-                    curl -f http://localhost:5173 || echo "Frontend unreachable"
-      
-                    echo "Vérification Backend (port 5001)..."
-                    curl -f http://localhost:5001/api || echo "Backend unreachable"
+                    echo "Frontend (port 5173) :" 
+                    curl -f http://localhost:5173 || echo "⚠️ Frontend inaccessible"
+                    echo "Backend (port 5001) :"
+                    curl -f http://localhost:5001/api || echo "⚠️ Backend inaccessible"
                 '''
             }
-       }*/
-
-       /*stage('Smoke Test') {
-            steps {
-                sh '''
-                    NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
-                    FRONT_PORT=$(kubectl get service frontend-service -o jsonpath='{.spec.ports[0].nodePort}')
-                    BACK_PORT=$(kubectl get service backend-service -o jsonpath='{.spec.ports[0].nodePort}')
-
-                    FRONT_URL=http://$NODE_IP:$FRONT_PORT
-                    BACK_URL=http://$NODE_IP:$BACK_PORT
-
-                    curl -f $FRONT_URL || echo "Frontend unreachable"
-                    curl -f $BACK_URL/api || echo "Backend unreachable"
-                '''
-            }
-        }*/
-
+        }
     }
 
     post {
         success {
+            echo "✅ Pipeline terminé avec succès !"
             emailext(
-                subject: "Build SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: "Pipeline réussi\nDétails : ${env.BUILD_URL}",
-                to: "seynaboubadji26@gmail.com"
+                subject: "✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """
+                ✅ Build réussi pour ${env.JOB_NAME} #${env.BUILD_NUMBER}
+                🔗 Détails: ${env.BUILD_URL}
+                """,
+                to: "omzokao99@gmail.com"
             )
         }
         failure {
+            echo "❌ Échec du pipeline."
             emailext(
-                subject: "Build FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: "Le pipeline a échoué\nDétails : ${env.BUILD_URL}",
-                to: "seynaboubadji26@gmail.com"
+                subject: "❌ FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "Le pipeline a échoué 💥\n\nDétails : ${env.BUILD_URL}",
+                to: "omzokao99@gmail.com"
             )
         }
     }
